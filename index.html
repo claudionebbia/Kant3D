@@ -1,0 +1,137 @@
+<html>
+  <head>
+	<title>Kant</title>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+	<script type="importmap">
+		{
+		  "imports": {
+			"vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+		  }
+		}
+	</script>
+	<script type="text/javascript" src="dragRotateComponet.js"></script>
+	<script type="module" src="./main.js"></script>
+	<style>
+		#propiedades {
+			border: 2px solid yellow;
+			border-radius: 0 0 10px 0;
+			position: fixed;
+			top: 0px;
+			left: -452px;
+			padding: 5px;
+			color: white;
+			font-family: 'Courier New', Courier, monospace;
+			transition: 0.3s all ease-out;
+		}
+
+		#showMenu, #hideMenu {
+			width: 18px;
+			height: 18px;
+			position: absolute;
+			top: -2px;
+			right: -18px;
+			background-color: yellow;
+			color: black;
+			border-radius: 0 10px 10px 0;
+			cursor: pointer;
+		}
+
+		input {
+			font-family: Verdana, Geneva, Tahoma, sans-serif;
+			background-color: #333;
+			color: greenyellow;
+			border: 2px solid yellow;
+			border-radius: 5px;
+		}
+
+		.button {
+			background-color: #333;
+			color: greenyellow;
+			border: 2px solid yellow;
+			border-radius: 5px;
+			display: inline-block;
+			cursor: pointer;
+		}
+
+	</style>
+  </head>
+  <body>
+	<div id="app">
+		<a-scene @mousedown="camina" @mouseup="detente">
+			<a-entity id="camara" :position="`${this.cam.x} ${this.cam.y} ${this.cam.z}`" camera look-controls="enabled:false">
+				<a-sphere :position="`${this.cam.x - this.cam.dx} ${this.cam.y} ${this.cam.z - this.cam.dz}`" radius="0.1" color="blue"></a-sphere>
+			</a-entity>
+			<a-sphere id="R3" 
+				drag-rotate-component
+				position="0 0 -4" 
+				rotation="15 -30 -10" 
+				:_rotation="`25 ${this.t} 0`" 
+				radius="0.1" 
+				color="white">
+				<a-cylinder position="0 0 0" radius="0.03" height="6" color="#aaa"></a-cylinder>
+				<a-cylinder position="0 0 0" rotation="-90 0 0" radius="0.03" height="6" color="#aaa"></a-cylinder>
+				<a-cylinder position="0 0 0" rotation="0 0 90" radius="0.03" height="6" color="#aaa"></a-cylinder>
+				<a-cone position="0 3 0" radius-bottom="0.1" radius-top="0" height="0.3" color="#ccc"></a-cone>
+				<a-cone position="3 0 0" rotation="0 0 90" radius-bottom="0" radius-top="0.1" height="0.3" color="#ccc"></a-cone>
+				<a-cone position="0 0 3" rotation="-90 0 0" radius-bottom="0" radius-top="0.1" height="0.3" color="#ccc"></a-cone>
+				<a-cone position="0 -3 0" radius-bottom="0" radius-top="0.1" height="0.3" color="#333333"></a-cone>
+				<a-cone position="-3 0 0" rotation="0 0 -90" radius-bottom="0" radius-top="0.1" height="0.3" color="#333333"></a-cone>
+				<a-cone position="0 0 -3" rotation="90 0 0" radius-bottom="0" radius-top="0.1" height="0.3" color="#333333"></a-cone>
+				<a-box v-for="p in getPlotValues3D"
+					  :position="`${p.x} ${p.y} ${p.z}`" 
+					  :rotation="`-25 -${this.t} 0`"
+					  :radius="`${p.r}`" 
+					  :depth="`${p.r}`" :height="`${p.r}`" :width="`${p.r}`"
+					  :color="`rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`"
+				></a-box>
+				<!-- a-trinagle v-for="(p,index) in getPlotValues3D" v-if="index < getPlotValues3D.length - 2"
+					  :vertex-a="`${p.x} ${p.y} ${p.z}`" 
+					  :vertex-b="`${getPlotValues3D[index + 1].x} ${getPlotValues3D[index + 1].y} ${getPlotValues3D[index + 1].z}`" 
+					  :vertex-c="`${getPlotValues3D[index + 2].x} ${getPlotValues3D[index + 2].y} ${getPlotValues3D[index + 2].z}`" 
+					  :color="`rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`"
+				></a-trinagle -->
+			</a-sphere>
+			<a-sky :color="skyColor"></a-sky>
+		</a-scene>
+		<div id="propiedades">
+			z = <input type="text" v-model="formula" style="width: 400px"><br>
+			Range x: <input type="number" v-model="xInterval" step="1" max="50" min="0">
+			Range y: <input type="number" v-model="yInterval" step="1" max="50" min="0"><br>
+			Point size: <input type="number" v-model="ballSize" step="0.01" min="0.01"><br>
+			Color 1: <input type="text" v-model="color1"><br>
+			Color 2: <input type="text" v-model="color2"><br>
+			&Delta;: <input type="number" v-model="step" step="0.05" max="1" min="0.05">
+			Auto Step: <input type="checkbox" v-model="autoStep"><br>
+			<div class="button" @click="copyLink">Share!</div>
+			<div id="hideMenu" style="display: none;" onclick="hideMenu()"> &lt; </div>
+			<div id="showMenu" style="display: block;" onclick="showMenu()"> &gt; </div>
+			<script>
+				function showMenu () {
+					propiedades.style.left = '0px';
+					document.getElementById("showMenu").style.display = 'none';
+					document.getElementById("hideMenu").style.display = 'block';
+				}
+				function hideMenu() {
+					propiedades.style.left = '-452px';
+					document.getElementById("showMenu").style.display = 'block';
+					document.getElementById("hideMenu").style.display = 'none';
+				}
+			</script>
+		</div>
+	</div>
+	<script id="share">
+		const queryString = window.location.search
+		const urlParams = new URLSearchParams(queryString)
+
+		window.app_data = {
+			z: decodeURIComponent(urlParams.get('z'))
+		}
+
+		if(window.app_data.z === "null") {
+			window.app_data.z = null
+		}
+
+		console.log(window.app_data)
+	</script>
+  </body>
+</html>
